@@ -1,5 +1,7 @@
-const Config = require('config');
+const Service = require('./service');
 
-const ourValue = Config.has('ourValue') ? Config.get('ourValue') : 'default value';
+exports.start = Service.start;
 
-console.log(ourValue);
+if(require.main === module) {
+  exports.start();
+}
