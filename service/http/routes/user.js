@@ -13,10 +13,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-const Service = require('./service');
+const Logger = require('../../logger');
 
-exports.start = Service.start;
+exports = module.exports = function(server) {
+  server.get('/userinfo', exports.getUserInfo);
+};
 
-if(require.main === module) {
-  exports.start();
-}
+exports.getUserInfo = function(request, response, next) {
+  Logger.info(`Userinfo get`);
+  response.send(200, 'userinfo');
+};

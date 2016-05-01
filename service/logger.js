@@ -13,7 +13,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-
 const bunyan = require('bunyan'),
   config = require('config'),
   pkg    = require('../package.json');

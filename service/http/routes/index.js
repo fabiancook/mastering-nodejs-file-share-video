@@ -13,10 +13,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-const Service = require('./service');
+const routes = [
+  require('./comment'),
+  require('./file'),
+  require('./user')
+];
 
-exports.start = Service.start;
-
-if(require.main === module) {
-  exports.start();
-}
+exports = module.exports = function(server) {
+  routes.forEach(function(route){
+    route(server);
+  });
+};
