@@ -19,7 +19,6 @@ exports = module.exports = function(server) {
   server.get('/userinfo', exports.getUserInfo);
 };
 
-exports.getUserInfo = function(request, response, next) {
-  Logger.info(`Userinfo get`);
-  response.send(200, 'userinfo');
+exports.getUserInfo = function(request, response) {
+  response.send(200, request.user);
 };

@@ -12,5 +12,8 @@ module.exports = function(user) {
       {
         upsert: true
       }
-    );
+    )
+    .then(function() {
+      return user;
+    });
 };

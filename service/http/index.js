@@ -18,13 +18,17 @@ const Restify = require('restify'),
   Pkg = require('../../package.json'),
   Logger = require('../logger'),
   Morgan = require('morgan'),
-  Routes = require('./routes');
+  Routes = require('./routes'),
+  User = require('../implementation/user'),
+  CheckToken = require('express-jwt'),
+  UnauthorizedError = require('express-jwt/lib/errors/UnauthorizedError');
 
 exports.start = function() {
   const server = exports.createServer();
 
   exports.initializeLogging(server);
   exports.initializeMiddleware(server);
+  exports.initializeAuthentication(server);
   exports.initializeRoutes(server);
 
   exports.listen(server);
@@ -131,4 +135,64 @@ exports.initializeMiddleware = function(server) {
     }
   }));
   server.use(Restify.conditionalRequest());
+};
+
+exports.initializeAuthentication = function(server) {
+  const config = exports.getAuthenticationConfig();
+  server.use(CheckToken(config));
+  server.use(exports.getUserProfile);
+};
+
+exports.getAuthenticationConfig = function() {
+  if(!(
+    Config.has('httpAuth0.secret.contents') &&
+    Config.has('httpAuth0.secret.encoding') &&
+    Config.has('httpAuth0.audience')
+  )) {
+    throw new Error('httpAuth0 config expected');
+  }
+  const secretContents = Config.get('httpAuth0.secret.contents'),
+    secretEncoding = Config.get('httpAuth0.secret.encoding'),
+    audience = Config.get('httpAuth0.audience');
+
+  return {
+    secret: new Buffer(secretContents, secretEncoding),
+    audience: audience,
+    getToken: exports.getAuthenticationToken
+  };
+};
+
+exports.getAuthenticationToken = function(request) {
+  if(request.headers && request.headers.authorization) {
+    var parts = request.headers.authorization.split(' ');
+    if (parts.length == 2) {
+      var scheme = parts[0];
+      var credentials = parts[1];
+
+      if (/^Bearer$/i.test(scheme)) {
+        return credentials;
+      } else {
+        throw new UnauthorizedError('credentials_bad_scheme', { message: 'Format is Authorization: Bearer [token]' });
+      }
+    } else {
+      throw new UnauthorizedError('credentials_bad_format', { message: 'Format is Authorization: Bearer [token]' });
+    }
+  } else if(request.query && (request.query.id_token || request.query.access_token)) {
+    return request.query.id_token || request.query.access_token;
+  }
+};
+
+exports.getUserProfile = function(request, response, next) {
+  var token;
+  try {
+    token = exports.getAuthenticationToken(request);
+  } catch(e) {
+    return next(e);
+  }
+  return User.getWithToken(token)
+    .then(function(user) {
+      request.user = user;
+      next(null);
+    })
+    .catch(next);
 };

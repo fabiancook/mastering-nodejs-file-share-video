@@ -13,8 +13,10 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-const Http = require('./http');
+const Http = require('./http'),
+  Data = require('packt-mastering-node-file-share-data');
 
 exports.start = function() {
-  Http.start();
+  return Data.initialize()
+    .then(Http.start);
 };
